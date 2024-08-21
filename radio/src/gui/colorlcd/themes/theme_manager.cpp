@@ -486,6 +486,7 @@ void ThemePersistance::insertDefaultTheme()
   themes.insert(themes.begin(), themeFile);
 }
 
+#if defined(RTCLOCK)
 HeaderDateTime::HeaderDateTime(Window* parent, coord_t x, coord_t y) :
   Window(parent, {x, y, HDR_DATE_WIDTH, HDR_DATE_LINE2 + HDR_DATE_HEIGHT + 2})
 {
@@ -537,6 +538,7 @@ void HeaderDateTime::setColor(LcdFlags color)
   etx_txt_color_from_flags(date, color);
   etx_txt_color_from_flags(time, color);
 }
+#endif
 
 HeaderIcon::HeaderIcon(Window* parent, EdgeTxIcon icon) :
   StaticIcon(parent, 0, 0, ICON_TOPLEFT_BG, COLOR_THEME_FOCUS_INDEX)
@@ -556,7 +558,9 @@ UsbSDConnected::UsbSDConnected() :
   setWindowFlag(OPAQUE);
 
   etx_solid_bg(lvobj, COLOR_THEME_PRIMARY1_INDEX);
+#if defined(RTCLOCK)
   new HeaderDateTime(this, LCD_W - TopBar::HDR_DATE_XO, PAD_MEDIUM);
+#endif
 
   auto icon = new StaticIcon(this, 0, 0, ICON_USB_PLUGGED, COLOR_THEME_PRIMARY2_INDEX);
   lv_obj_center(icon->getLvObj());

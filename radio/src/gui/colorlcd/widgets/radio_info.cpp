@@ -231,6 +231,7 @@ const ZoneOption RadioInfoWidget::options[] = {
 BaseWidgetFactory<RadioInfoWidget> RadioInfoWidget("Radio Info", RadioInfoWidget::options,
                                                    STR_RADIO_INFO_WIDGET);
 
+#if defined(RTCLOCK)
 class DateTimeWidget : public TopBarWidget
 {
  public:
@@ -267,6 +268,7 @@ const ZoneOption DateTimeWidget::options[] = {
 BaseWidgetFactory<DateTimeWidget> DateTimeWidget("Date Time",
                                                  DateTimeWidget::options,
                                                  STR_DATE_TIME_WIDGET);
+#endif
 
 #if defined(INTERNAL_GPS)
 

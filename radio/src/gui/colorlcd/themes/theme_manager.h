@@ -158,6 +158,7 @@ class ThemePersistance
     static ThemePersistance themePersistance;
 };
 
+#if defined(RTCLOCK)
 class HeaderDateTime : public Window
 {
  public:
@@ -176,6 +177,7 @@ class HeaderDateTime : public Window
 
   void checkEvents() override;
 };
+#endif
 
 class HeaderIcon : public StaticIcon
 {

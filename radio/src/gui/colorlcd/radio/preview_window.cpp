@@ -174,7 +174,9 @@ PreviewWindow::PreviewWindow(Window *window, rect_t rect,
   new ThemedTextEdit(this, {EDT2_X, EDT_Y, TXT_W, 0}, STR_THEME_FOCUS, false);
   ticks = 0;
 
+#if defined(RTCLOCK)
   new HeaderDateTime(this, width() - DATE_XO, PAD_SMALL);
+#endif
 
   lv_group_set_default(def_group);
 

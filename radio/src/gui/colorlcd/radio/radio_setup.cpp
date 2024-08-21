@@ -38,6 +38,7 @@ static const lv_coord_t col_two_dsc[] = {LV_GRID_FR(19), LV_GRID_FR(21),
                                          LV_GRID_TEMPLATE_LAST};
 static const lv_coord_t row_dsc[] = {LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
 
+#if defined(RTCLOCK)
 class DateTimeWindow : public Window
 {
  public:
@@ -185,6 +186,7 @@ class DateTimeWindow : public Window
         [](int value) { return formatNumberAsString(value, LEADING0, 2); });
   }
 };
+#endif
 
 #if defined(AUDIO)
 static SetupLineDef soundPageSetupLines[] = {
@@ -922,9 +924,11 @@ void RadioSetupPage::build(Window* window)
   coord_t y = 0;
   Window * w;
 
+#if defined(RTCLOCK)
   // Date & time picker including labels
   w = new DateTimeWindow(window, {0, y, LCD_W - padding * 2, EdgeTxStyles::UI_ELEMENT_HEIGHT * 2 + PAD_TINY * 2 + PAD_MEDIUM});
   y += w->height() + padding;
+#endif
 
   // Sub-pages
   w = new SetupButtonGroup(window, {0, y, LCD_W - padding * 2, 0}, nullptr, BTN_COLS, PAD_TINY, {

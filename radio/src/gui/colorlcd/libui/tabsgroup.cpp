@@ -154,7 +154,9 @@ class TabsGroupHeader : public Window
 
     selectedIcon = new SelectedTabIcon(carousel);
 
+#if defined(RTCLOCK)
     new HeaderDateTime(this, LCD_W - DATE_XO, PAD_MEDIUM);
+#endif
   }
 
   void setTitle(const char* title) { lv_label_set_text(titleLabel, title); }
@@ -229,7 +231,11 @@ class TabsGroupHeader : public Window
 
   static LAYOUT_VAL(DATE_XO, 48, 48)
   static LAYOUT_VAL(MENU_HEADER_BUTTON_WIDTH, 33, 33)
+#if defined(RTCLOCK)  
   static LAYOUT_VAL(HDR_DATE_FULL_WIDTH, 51, 51)
+#else  
+  static LAYOUT_VAL(HDR_DATE_FULL_WIDTH, 0, 0)
+#endif
 
  protected:
   uint8_t currentIndex = 0;

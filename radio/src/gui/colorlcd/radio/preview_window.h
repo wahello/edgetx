@@ -24,7 +24,9 @@
 #include "window.h"
 #include "theme_manager.h"
 
+#if defined(RTCLOCK)
 class HeaderDateTime;
+#endif
 
 // display controls using the appropriate theme.
 class PreviewWindow : public Window

@@ -140,7 +140,7 @@ endif()
 
 if(FLYSKY_GIMBAL)
   set(FIRMWARE_SRC ${FIRMWARE_SRC}
-    targets/common/arm/stm32/flysky_gimbal_driver.cpp
+    targets/common/arm/stm32/serial_gimbal_driver.cpp
   )
   add_definitions(-DFLYSKY_GIMBAL)
 endif()

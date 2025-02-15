@@ -46,7 +46,7 @@
 #include "trainer.h"
 
 #if defined(FLYSKY_GIMBAL)
-  #include "flysky_gimbal_driver.h"
+  #include "serial_gimbal_driver.h"
 #endif
 
 #if !defined(BOOT)
@@ -232,7 +232,7 @@ void boardInit()
 #endif
 
 #if defined(FLYSKY_GIMBAL)
-  flysky_gimbal_init();
+  serial_gimbal_init();
 #endif
 
   if (!adcInit(&_adc_driver))

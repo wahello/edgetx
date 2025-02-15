@@ -47,7 +47,7 @@
 #endif
 
 #if defined(FLYSKY_GIMBAL)
-  #include "flysky_gimbal_driver.h"
+  #include "serial_gimbal_driver.h"
 #endif
 #include "timers_driver.h"
 
@@ -226,7 +226,7 @@ void boardInit()
   battery_charge_init();
   
   #if defined(FLYSKY_GIMBAL)
-    flysky_gimbal_init();
+    serial_gimbal_init();
   #endif
   
   timersInit();

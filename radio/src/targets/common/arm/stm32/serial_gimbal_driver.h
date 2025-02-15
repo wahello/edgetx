@@ -25,20 +25,20 @@
 
 // Max packet size = 1 byte header + 1 byte ID + 1 byte length + 25 bytes payload + 2 bytes CRC = 30 bytes
 // using 32 bytes is more than enough
-#define HALLSTICK_BUFF_SIZE             ( 32 )
-#define GIMBAL_HALL_BAUDRATE            ( 921600 )
-#define GIMBAL_HALL_CHANNEL_COUNT       ( 4 )
+#define SERIAL_GIMBAL_BUFF_SIZE           ( 32 )
+#define SERIAL_GIMBAL_BAUDRATE            ( 921600 )
+#define SERIAL_GIMBAL_CHANNEL_COUNT       ( 4 )
 
 // This value has been chosen arbitrarily to allow
 // for 13-bit precision.
 //
-// Note: Flysky gimbals provide signed 16-bit values, whereby
+// Note: Serial gimbals provide signed 16-bit values, whereby
 //       ADC sampling uses unsigned 16-bit values.
 //
-#define GIMBAL_HALL_OFFSET_VALUE        ( 1 << 12 )
+#define SERIAL_GIMBAL_OFFSET_VALUE        ( 1 << 12 )
 
-#define GIMBAL_HALL_PROTOLO_HEAD        0x55
-#define GIMBAL_HALL_RESP_TYPE_VALUES    0x0c
+#define SERIAL_GIMBAL_PROTOLO_HEAD        0x55
+#define SERIAL_GIMBAL_RESP_TYPE_VALUES    0x0c
 
 typedef struct __attribute__ ((packed))
 {

@@ -46,13 +46,14 @@ struct stm32_serial_port {
 
 extern const etx_serial_driver_t STM32SerialDriver;
 
-#define DEFINE_STM32_SERIAL_PORT(p,usart,rx_buf_len,tx_buf_len) \
-  static uint8_t p ## _RXBuffer[rx_buf_len] __DMA_NO_CACHE;     \
-  static uint8_t p ## _TXBuffer[tx_buf_len] __DMA_NO_CACHE;     \
-  static const stm32_serial_port p ## _STM32Serial = {          \
-    &usart,                                                     \
-    { p ## _RXBuffer, rx_buf_len },                             \
-    { p ## _TXBuffer, tx_buf_len },                             \
+#define DEFINE_STM32_SERIAL_PORT(p, usart, rx_buf_len, tx_buf_len)   \
+  static uint8_t                                                     \
+      p##_RXBuffer[rx_buf_len + __STM32_LL_DMA_ADDR] __DMA_NO_CACHE; \
+  static uint8_t p##_TXBuffer[tx_buf_len] __DMA_NO_CACHE;            \
+  static const stm32_serial_port p##_STM32Serial = {                 \
+      &usart,                                                        \
+      {p##_RXBuffer, rx_buf_len},                                    \
+      {p##_TXBuffer, tx_buf_len},                                    \
   }
 
 #define REF_STM32_SERIAL_PORT(p) ((void*)& p ## _STM32Serial)

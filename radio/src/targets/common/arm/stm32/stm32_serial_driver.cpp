@@ -63,7 +63,7 @@ enum _STM32_USART {
   _STM32_UART4,
 #endif
 
-#if defined(UART5) && (defined(STM32H7) || defined(STM32H7RS))
+#if defined(UART5)
   _STM32_UART5,
 #endif
 
@@ -80,7 +80,7 @@ enum _STM32_USART {
 #endif
 
 #if defined(USART10)
-    _STM32_USART10,
+  _STM32_USART10,
 #endif
 
   _STM32_MAX_UARTS
@@ -201,7 +201,7 @@ static stm32_serial_state* stm32_serial_find_state(const stm32_usart_t* usart)
 #if defined (UART4)
   if (usart->USARTx == UART4) return &_serial_states[_STM32_UART4];
 #endif
-#if defined (UART5) && (defined(STM32H7) || defined(STM32H7RS))
+#if defined (UART5)
   if (usart->USARTx == UART5) return &_serial_states[_STM32_UART5];
 #endif
 #if defined (USART6)

@@ -55,6 +55,12 @@ struct stm32_usart_t {
     uint8_t                    txDMA_IRQ_Prio;
 };
 
+#if defined(STM32H7RS) || defined(STM32H5)
+  #define __STM32_LL_DMA_ADDR sizeof(uint32_t)
+#else
+  #define __STM32_LL_DMA_ADDR 0
+#endif
+
 bool stm32_usart_init(const stm32_usart_t* usart, const etx_serial_init* params);
 void stm32_usart_init_rx_dma(const stm32_usart_t* usart, const void* buffer, uint32_t length);
 void stm32_usart_enable_tx_irq(const stm32_usart_t* usart);
@@ -62,9 +68,9 @@ void stm32_usart_set_idle_irq(const stm32_usart_t* usart, uint32_t enabled);
 void stm32_usart_deinit(const stm32_usart_t* usart);
 void stm32_usart_deinit_rx_dma(const stm32_usart_t* usart);
 
-#if defined(STM32H7) || defined(STM32H7RS)
+#if defined(STM32H7) || defined(STM32H7RS) || defined(STM32H5)
 void stm32_usart_rx_inversion(const stm32_usart_t* usart, bool on);
-void stm32_usart_tx_inversion(const stm32_usart_t* usart, bool off);
+void stm32_usart_tx_inversion(const stm32_usart_t* usart, bool on);
 #endif
 
 void stm32_usart_send_byte(const stm32_usart_t* usart, uint8_t byte);

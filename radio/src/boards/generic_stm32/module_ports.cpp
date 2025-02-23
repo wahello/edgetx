@@ -145,26 +145,22 @@ DEFINE_STM32_SERIAL_PORT(ExternalModule, extmoduleUSART, INTMODULE_FIFO_SIZE, 0)
 
 
 #if (defined(EXTMODULE_TX_INVERT_GPIO) && defined(EXTMODULE_RX_INVERT_GPIO)) \
-  || defined(STM32H7) || defined(STM32H7RS)
+  || defined(STM32H7) || defined(STM32H7RS) || defined(STM32H5)
 
 #define HAS_EXTMODULE_INVERTERS
 
 static void _extmod_set_inverted(uint8_t enable)
 {
-#if defined(STM32H7) || defined(STM32H7RS)
-#ifdef EXTMODULE_USART
+#if defined(EXTMODULE_USART) && \
+    (defined(STM32H7) || defined(STM32H7RS) || defined(STM32H5))
   stm32_usart_rx_inversion(&extmoduleUSART, !enable);
   stm32_usart_tx_inversion(&extmoduleUSART, !enable);
-#else
-#error no UART to invert
-#endif
 #else
   // In EdgeTX the external module is normally always
   // inverted, so invert the logic here
   gpio_write(EXTMODULE_TX_INVERT_GPIO, !enable);
   gpio_write(EXTMODULE_RX_INVERT_GPIO, !enable);
 #endif
-
 }
 
 static void _extmod_init_inverter()
@@ -267,23 +263,26 @@ static const stm32_pulse_timer_t trainerModuleTimer = {
 
 #endif // HARDWARE_EXTERNAL_MODULE
 
-#define TELEMETRY_USART_IRQ_PRIORITY 0
-#define TELEMETRY_DMA_IRQ_PRIORITY   0
+#if defined(TELEMETRY_RX_FRAME_EXTI_LINE)
+  #define TELEMETRY_USART_IRQ_PRIORITY 0
+  #define TELEMETRY_DMA_IRQ_PRIORITY   0
+#else
+  #define TELEMETRY_USART_IRQ_PRIORITY 5
+  #define TELEMETRY_DMA_IRQ_PRIORITY   0
+#endif
 
+#if defined(TELEMETRY_DIR_GPIO)
 static void _set_sport_input(uint8_t enable)
 {
-#if defined(TELEMETRY_DIR_GPIO)
   if (TELEMETRY_SET_INPUT) {
     gpio_write(TELEMETRY_DIR_GPIO, enable);
   } else {
     gpio_write(TELEMETRY_DIR_GPIO, !enable);
   }
-#else
-  (void)enable;
-#endif
 }
+#endif
 
-#if defined(TELEMETRY_USART)
+#if defined(TELEMETRY_USART) && defined(HARDWARE_EXTERNAL_MODULE)
 static const stm32_usart_t sportUSART = {
   .USARTx = TELEMETRY_USART,
   .txGPIO = TELEMETRY_TX_GPIO,
@@ -296,10 +295,10 @@ static const stm32_usart_t sportUSART = {
   .rxDMA = nullptr,
   .rxDMA_Stream = 0,
   .rxDMA_Channel = 0,
-#if defined(STM32H7) || (STM32H7RS)
-  .set_input = nullptr,
-#else
+#if defined(TELEMETRY_DIR_GPIO)
   .set_input = _set_sport_input,
+#else
+  .set_input = nullptr,
 #endif
   .txDMA_IRQn = TELEMETRY_DMA_TX_Stream_IRQ,
   .txDMA_IRQ_Prio = TELEMETRY_DMA_IRQ_PRIORITY,
@@ -320,14 +319,14 @@ static void _sport_direction_init()
 #endif
 #endif
 
-
-#if (defined(TELEMETRY_TX_REV_GPIO) && defined(TELEMETRY_RX_REV_GPIO)) || defined(STM32H7) || defined(STM32H7RS)
+#if (defined(TELEMETRY_TX_REV_GPIO) && defined(TELEMETRY_RX_REV_GPIO)) || \
+    defined(STM32H7) || defined(STM32H7RS) || defined(STM32H5)
 
 #define HAS_SPORT_INVERTER
 
 static void _sport_set_inverted(uint8_t enable)
 {
-#if defined(STM32H7) || defined(STM32H7RS)
+#if defined(STM32H7) || defined(STM32H7RS) || defined(STM32H5)
 #if defined(TELEMETRY_USART)
   stm32_usart_rx_inversion(&sportUSART, !enable);
   stm32_usart_tx_inversion(&sportUSART, !enable);
@@ -348,7 +347,7 @@ static void _sport_init_inverter()
 }
 #endif
 
-#if defined(TELEMETRY_TIMER)
+#if defined(TELEMETRY_TIMER) && defined(HARDWARE_EXTERNAL_MODULE)
 static const stm32_softserial_rx_port sportSoftRX = {
   .GPIO = TELEMETRY_RX_GPIO,
   .TIMx = TELEMETRY_TIMER,
@@ -518,6 +517,7 @@ static const etx_module_port_t _external_ports[] = {
     .set_inverted = nullptr,
   },
 #endif
+#if defined(TELEMETRY_USART)
   // TX/RX half-duplex on S.PORT
   {
     .port = ETX_MOD_PORT_SPORT,
@@ -531,6 +531,7 @@ static const etx_module_port_t _external_ports[] = {
     .set_inverted = nullptr,
 #endif
   },
+#endif
 #if defined(TELEMETRY_TIMER)
   // RX soft-serial sampled bit-by-bit via timer IRQ on S.PORT
   {
@@ -587,7 +588,7 @@ uint32_t __pxx1_get_inverter_comp() { return 1; }
 
 void boardInitModulePorts()
 {
-#if defined(TELEMETRY_USART) && defined(TELEMETRY_DIR_GPIO)
+#if defined(TELEMETRY_USART) && defined(TELEMETRY_DIR_GPIO) && defined(HARDWARE_EXTERNAL_MODULE)
   _sport_direction_init();
 #endif
 

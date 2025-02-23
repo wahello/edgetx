@@ -26,6 +26,7 @@
 #include "stm32_gpio.h"
 
 #include "definitions.h"
+#include "stm32h5xx_ll_dma.h"
 
 #include <string.h>
 
@@ -46,7 +47,19 @@ static void init_dma_arr_mode(const stm32_pulse_timer_t* tim)
   LL_DMA_StructInit(&dmaInit);
 
 #if defined(STM32H7RS) || defined(STM32H5)
-#warning DMA for pulses driver not implemented
+  dmaInit.DestAddress = CONVERT_PTR_UINT(&tim->TIMx->ARR);
+  dmaInit.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
+  dmaInit.SrcIncMode = LL_DMA_SRC_INCREMENT;
+  dmaInit.Priority = LL_DMA_LOW_PRIORITY_HIGH_WEIGHT;
+  dmaInit.Request = tim->DMA_Channel;
+
+  if (IS_TIM_32B_COUNTER_INSTANCE(tim->TIMx)) {
+    dmaInit.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_WORD;
+    dmaInit.DestDataWidth = LL_DMA_DEST_DATAWIDTH_WORD;
+  } else {
+    dmaInit.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_HALFWORD;
+    dmaInit.DestDataWidth = LL_DMA_DEST_DATAWIDTH_HALFWORD;
+  }
 #else
   // Direction
   dmaInit.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
@@ -75,6 +88,7 @@ static void init_dma_arr_mode(const stm32_pulse_timer_t* tim)
   dmaInit.Priority = LL_DMA_PRIORITY_VERYHIGH;
 
 #endif
+
   stm32_dma_enable_clock(tim->DMAx);
   LL_DMA_Init(tim->DMAx, tim->DMA_Stream, &dmaInit);
 }
@@ -224,14 +238,15 @@ bool stm32_pulse_get_polarity(const stm32_pulse_timer_t* tim)
 // return true if stopped, false otherwise
 bool stm32_pulse_if_not_running_disable(const stm32_pulse_timer_t* tim)
 {
-#if !defined(STM32H7RS) && !defined(STM32H5)
-  if (LL_DMA_IsEnabledStream(tim->DMAx, tim->DMA_Stream))
-    return false;
+#if defined(STM32H7RS) || defined(STM32H5)
+  if (LL_DMA_IsEnabledChannel(tim->DMAx, tim->DMA_Stream)) return false;
+#else
+  if (LL_DMA_IsEnabledStream(tim->DMAx, tim->DMA_Stream)) return false;
+#endif
 
   // disable timer
   LL_TIM_DisableCounter(tim->TIMx);
   LL_TIM_DisableIT_UPDATE(tim->TIMx);
-#endif
   return true;
 }
 
@@ -294,11 +309,18 @@ void stm32_pulse_start_dma_req(const stm32_pulse_timer_t* tim,
   // Re-configure timer output
   set_compare_reg(tim, cmp_val);
   set_oc_mode(tim, ocmode);
+
 #if defined(STM32H7RS) || defined(STM32H5)
-#warning pulse DMA not implemented
+  length *= 2;
+  if (IS_TIM_32B_COUNTER_INSTANCE(tim->TIMx)) {
+    length *= 2;
+  }
+  LL_DMA_SetBlkDataLength(tim->DMAx, tim->DMA_Stream, length);
+  LL_DMA_SetSrcAddress(tim->DMAx, tim->DMA_Stream, (uint32_t)pulses);
 #else
   LL_DMA_SetDataLength(tim->DMAx, tim->DMA_Stream, length);
   LL_DMA_SetMemoryAddress(tim->DMAx, tim->DMA_Stream, (uint32_t)pulses);
+#endif
 
   // Enable TC IRQ
   LL_DMA_EnableIT_TC(tim->DMAx, tim->DMA_Stream);
@@ -317,8 +339,13 @@ void stm32_pulse_start_dma_req(const stm32_pulse_timer_t* tim,
   }
 
   LL_TIM_EnableDMAReq_UPDATE(tim->TIMx);
+
+#if defined(STM32H7RS) || defined(STM32H5)
+  LL_DMA_EnableChannel(tim->DMAx, tim->DMA_Stream);
+#else
   LL_DMA_EnableStream(tim->DMAx, tim->DMA_Stream);
 #endif
+
   // start timer
   LL_TIM_EnableCounter(tim->TIMx);
 }

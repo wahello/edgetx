@@ -2322,23 +2322,23 @@
 
   //USART
   #define EXTMODULE_USART                    USART1
-  #define EXTMODULE_USART_RX_GPIO            GPIO_PIN(GPIOA, 10)
-  #define EXTMODULE_USART_TX_GPIO            GPIO_PIN(GPIOA, 9)
+  #define EXTMODULE_USART_RX_GPIO            EXTMODULE_RX_GPIO
+  #define EXTMODULE_USART_TX_GPIO            EXTMODULE_TX_GPIO
   #define EXTMODULE_USART_TX_DMA             GPDMA2
-  #define EXTMODULE_USART_TX_DMA_CHANNEL     LL_GPDMA2_REQUEST_USART10_TX
+  #define EXTMODULE_USART_TX_DMA_CHANNEL     LL_GPDMA2_REQUEST_USART1_TX
   #define EXTMODULE_USART_TX_DMA_STREAM      LL_DMA_CHANNEL_1
-  #define EXTMODULE_USART_RX_DMA_CHANNEL     LL_GPDMA2_REQUEST_USART10_RX
+  #define EXTMODULE_USART_RX_DMA_CHANNEL     LL_GPDMA2_REQUEST_USART1_RX
   #define EXTMODULE_USART_RX_DMA_STREAM      LL_DMA_CHANNEL_2
   #define EXTMODULE_USART_IRQHandler         USART1_IRQHandler
   #define EXTMODULE_USART_IRQn               USART1_IRQn
 
   //TIMER
   // TIM1_CH2
-  #define EXTMODULE_TIMER_DMA_CHANNEL        LL_GPDMA2_REQUEST_TIM1_CH2
-  #define EXTMODULE_TIMER_DMA                GPDMA2
-  #define EXTMODULE_TIMER_DMA_STREAM         LL_DMA_CHANNEL_0
-  #define EXTMODULE_TIMER_DMA_STREAM_IRQn    GPDMA2_Channel0_IRQn
-  #define EXTMODULE_TIMER_DMA_IRQHandler     GPDMA2_Channel0_IRQHandler
+  #define EXTMODULE_TIMER_DMA                EXTMODULE_USART_TX_DMA
+  #define EXTMODULE_TIMER_DMA_STREAM         EXTMODULE_USART_TX_DMA_STREAM
+  #define EXTMODULE_TIMER_DMA_CHANNEL        LL_GPDMA2_REQUEST_TIM1_UP
+  #define EXTMODULE_TIMER_DMA_STREAM_IRQn    GPDMA2_Channel1_IRQn
+  #define EXTMODULE_TIMER_DMA_IRQHandler     GPDMA2_Channel1_IRQHandler
 #elif defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019) || defined(PCBX7ACCESS) || defined(RADIO_ZORRO) || defined(RADIO_POCKET) || defined(RADIO_TX12MK2) || defined(RADIO_BOXER) || defined(RADIO_MT12) || defined(RADIO_T14) || defined(RADIO_T12MAX) || defined(RADIO_TPROS) || defined(RADIO_V14) || defined(RADIO_V12) || defined(RADIO_T12MAX) || defined(RADIO_GX12)
   #if defined(RADIO_X9DP2019) || defined(RADIO_X7ACCESS) || defined(RADIO_ZORRO)|| defined(RADIO_POCKET) || defined(RADIO_TX12MK2) || defined(RADIO_BOXER) || defined(RADIO_MT12)|| defined(RADIO_T14) || defined(RADIO_T12MAX) || defined(RADIO_TPROS) || defined(RADIO_V14) || defined(RADIO_V12)
     #define EXTMODULE_PWR_GPIO          GPIO_PIN(GPIOD, 8) // PD.08
@@ -2504,48 +2504,57 @@
 #endif
 
 // Telemetry
-#if defined(STM32H562xx)
-// half duplex telem
-#else
+#if defined(RADIO_H5TEST)
+
+#define TELEMETRY_TX_GPIO               GPIO_PIN(GPIOB, 9) // PB.09
+#define TELEMETRY_RX_GPIO               GPIO_UNDEF
+#define TELEMETRY_USART                 UART4
+#define TELEMETRY_DMA                   GPDMA2
+#define TELEMETRY_DMA_Stream_TX         LL_DMA_CHANNEL_0
+#define TELEMETRY_DMA_Channel_TX        LL_GPDMA2_REQUEST_UART4_TX
+#define TELEMETRY_DMA_TX_Stream_IRQ     GPDMA2_Channel0_IRQn
+#define TELEMETRY_DMA_TX_IRQHandler     GPDMA2_Channel0_IRQHandler
+#define TELEMETRY_USART_IRQHandler      UART4_IRQHandler
+#define TELEMETRY_USART_IRQn            UART4_IRQn
+
+#else // RADIO_H5TEST
 #define TELEMETRY_DIR_GPIO              GPIO_PIN(GPIOD, 4) // PD.04
+
 #if defined(PCBXLITE) || defined(PCBX9LITE) || defined(RADIO_X9DP2019) || \
     defined(RADIO_X7ACCESS)
   #define TELEMETRY_SET_INPUT           1
 #else
   #define TELEMETRY_SET_INPUT           0
 #endif
+
 #if defined(RADIO_V14) || defined(RADIO_V12)
   #define TELEMETRY_RX_REV_GPIO           GPIO_PIN(GPIOE, 0)  // PE.00
   #define TELEMETRY_TX_REV_GPIO           GPIO_PIN(GPIOE, 0)  // PE.00
 #endif
-#if defined(RADIO_H5TEST)
-#define TELEMETRY_TX_GPIO               GPIO_PIN(GPIOB, 9) // PB.09
-#define TELEMETRY_RX_GPIO               GPIO_UNDEF
-#else
+
 #define TELEMETRY_TX_GPIO               GPIO_PIN(GPIOD, 5) // PD.05
 #define TELEMETRY_RX_GPIO               GPIO_PIN(GPIOD, 6) // PD.06
-#endif
 #define TELEMETRY_USART                 USART2
 #define TELEMETRY_DMA                   DMA1
 #define TELEMETRY_DMA_Stream_TX         LL_DMA_STREAM_6
 #define TELEMETRY_DMA_Channel_TX        LL_DMA_CHANNEL_4
 #define TELEMETRY_DMA_TX_Stream_IRQ     DMA1_Stream6_IRQn
 #define TELEMETRY_DMA_TX_IRQHandler     DMA1_Stream6_IRQHandler
-#define TELEMETRY_DMA_TX_FLAG_TC        DMA_IT_TCIF6
 #define TELEMETRY_USART_IRQHandler      USART2_IRQHandler
 #define TELEMETRY_USART_IRQn            USART2_IRQn
 #define TELEMETRY_EXTI_PORT             LL_SYSCFG_EXTI_PORTD
 #define TELEMETRY_EXTI_SYS_LINE         LL_SYSCFG_EXTI_LINE6
 #define TELEMETRY_EXTI_LINE             LL_EXTI_LINE_6
 #define TELEMETRY_EXTI_TRIGGER          LL_EXTI_TRIGGER_RISING
+
 // TELEMETRY_EXTI IRQ
 #if !defined(RADIO_H5TEST)
-#if !defined(USE_EXTI9_5_IRQ)
-  #define USE_EXTI9_5_IRQ
-#endif
-// overwrite priority
-#undef EXTI9_5_IRQ_Priority
-#define EXTI9_5_IRQ_Priority            TELEMETRY_EXTI_PRIO
+  #if !defined(USE_EXTI9_5_IRQ)
+    #define USE_EXTI9_5_IRQ
+  #endif
+  // overwrite priority
+  #undef EXTI9_5_IRQ_Priority
+  #define EXTI9_5_IRQ_Priority          TELEMETRY_EXTI_PRIO
 #endif
 
 #define TELEMETRY_TIMER                 TIM11

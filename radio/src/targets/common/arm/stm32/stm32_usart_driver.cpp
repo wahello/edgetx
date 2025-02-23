@@ -243,90 +243,55 @@ static gpio_speed_t _get_pin_speed(uint32_t baudrate)
 #if defined(STM32H7RS)
 # define _AF7_USART(x) \
   (x == USART1 || x == USART2 || x == USART3 || x == UART7)
-#else // F2, F4
+#elif defined(STM32F2) || defined(STM32F4)
 # define _AF7_USART(x) \
   (x == USART1 || x == USART2 || x == USART3)
+#elif defined(STM32H5)
+# define _AF4_USART(x,pin_nr) (x == USART1 && (pin_nr == 14 || pin_nr == 15))
+# define _AF6_USART(x, port) (x == UART4 && port == GPIOA)
+# define _AF11_USART(x, port) (x == UART7 && (port == GPIOA || port == GPIOB))
+# define _AF14_USART(x) (x == UART5 && port == GPIOB)
+# define _AF8_USART(x, port) (x == UART4 || x == UART5 || (x == UART8 && port != GPIOH))
+#elif defined(STM32H7)
+# define _AF4_USART(x) (x == USART1)
+# define _AF6_USART(x, port, pin_nr) \
+  (x == UART4 && port == GPIOA && (pin_nr == 11 || pin_nr == 12))
+# define _AF11_USART(x, port) (x == UART7 && (port == GPIOA || port == GPIOB))
+# define _AF14_USART(x) (x == UART5)
+# define _AF7_USART(x) \
+  (x == USART2 || x == USART3 || x == USART6 || x == USART7 || x == USART10)
 #endif
 
 static gpio_af_t _get_usart_af(gpio_t pin, USART_TypeDef* USARTx)
 {
 #if defined(STM32H7)
   GPIO_TypeDef* port = gpio_get_port(pin);
-  uint32_t pinNr = gpio_get_pin(pin);
-  if(USARTx == USART1)
-  {
-    if(port == GPIOA)
-    {
-      return GPIO_AF7;
-    } else { // GPIOB
-      if(pinNr < 14)
-        return GPIO_AF7;
-      return GPIO_AF4;
-    }
-  } else if (USARTx == USART2 || USARTx == USART3 || USARTx == USART6) {
-    return GPIO_AF7;
-  } else if (USARTx == UART4) {
-    if(port == GPIOA && (pin == 11 || pin == 12))
-        return GPIO_AF6;
-    return GPIO_AF8;
-  } else if (USARTx == UART5) {
-    if(port == GPIOB)
-      return GPIO_AF14;
-    return GPIO_AF8;
-  } else if (USARTx == UART7) {
-    if (port == GPIOA || port == GPIOB)
-      return GPIO_AF11;
-    return GPIO_AF7;
-  } else if (USARTx == UART8) {
-    return GPIO_AF8;
-  } else if (USARTx == USART10) {
-    return GPIO_AF7;
-  }
-  return 0;
+  uint32_t pin_nr = gpio_get_pin(pin);
+  return _AF4_USART(USARTx)
+             ? GPIO_AF4
+             : (_AF6_USART(USARTx, port, pin_nr)
+                    ? GPIO_AF6
+                    : (_AF11_USART(USARTx, port)
+                           ? GPIO_AF11
+                           : (_AF14_USART(USARTx)
+                                  ? GPIO_AF14
+                                  : (_AF7_USART(USARTx) ? GPIO_AF7
+                                                        : GPIO_AF8))));
+
 #elif defined(STM32H5)
-   GPIO_TypeDef* port = gpio_get_port(pin);
-   uint32_t pinNr = gpio_get_pin(pin);
-   if(USARTx == USART1)
-   {
-     if(port == GPIOA)
-     {
-       return GPIO_AF7;
-     } else { // GPIOB
-       if(pinNr < 14)
-         return GPIO_AF7;
-       return GPIO_AF4;
-     }
-   } else if (USARTx == USART2 || USARTx == USART3 || USARTx == USART6) {
-     return GPIO_AF7;
-   } else if (USARTx == UART4) {
-     if(port == GPIOA && (pin == 11 || pin == 12))
-         return GPIO_AF6;
-     return GPIO_AF8;
-   } else if (USARTx == UART5) {
-     if(port == GPIOB)
-       return GPIO_AF14;
-     return GPIO_AF8;
-   } else if (USARTx == UART7) {
-     if (port == GPIOA || port == GPIOB)
-       return GPIO_AF11;
-     return GPIO_AF7;
-   } else if (USARTx == UART8) {
-     if (port == GPIOH)
-       return GPIO_AF7;
-   } else if (USARTx == UART9) {
-     return GPIO_AF11;
-   } else if (USARTx == USART10) {
-     if (port == GPIOG)
-       return GPIO_AF6;
-     return GPIO_AF7;
-   } else if (USARTx == USART11) {
-     return GPIO_AF7;
-   } else if (USARTx == UART12) {
-     if (port == GPIOE || port == GPIOF)
-       return GPIO_AF6;
-     return GPIO_AF7;
-   }
-   return 0;
+  GPIO_TypeDef* port = gpio_get_port(pin);
+  uint32_t pin_nr = gpio_get_pin(pin);
+  return _AF4_USART(USARTx, pin_nr)
+             ? GPIO_AF4
+             : (_AF6_USART(USARTx, port)
+                    ? GPIO_AF6
+                    : (_AF11_USART(USARTx, port)
+                           ? GPIO_AF11
+                           : (_AF14_USART(USARTx)
+                                  ? GPIO_AF14
+                                  : (_AF8_USART(USARTx, port) ? GPIO_AF8
+                                                              : GPIO_AF7))));
+
 #else
   return _AF7_USART(USARTx) ? GPIO_AF7 : GPIO_AF8;
 #endif
@@ -423,46 +388,33 @@ void stm32_usart_init_rx_dma(const stm32_usart_t* usart, const void* buffer, uin
   LL_DMA_StructInit(&dmaInit);
 
 #if defined(STM32H7RS) || defined(STM32H5)
-    dmaInit.DestAddress = (intptr_t)buffer;
-    dmaInit.SrcAddress =
-        LL_USART_DMA_GetRegAddr(usart->USARTx, LL_USART_DMA_REG_DATA_RECEIVE);
-    dmaInit.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
-    dmaInit.BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
-    dmaInit.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
-    dmaInit.SrcBurstLength = 1;
-    dmaInit.DestBurstLength = 1;
-    dmaInit.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
-    dmaInit.DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
-    dmaInit.SrcIncMode = LL_DMA_SRC_FIXED;
-    dmaInit.DestIncMode = LL_DMA_DEST_INCREMENT;
-    dmaInit.Priority = LL_DMA_LOW_PRIORITY_HIGH_WEIGHT;
-    dmaInit.BlkDataLength = length;
-    dmaInit.TriggerMode = LL_DMA_TRIGM_BLK_TRANSFER;
-    dmaInit.TriggerPolarity = LL_DMA_TRIG_POLARITY_MASKED;
-    dmaInit.TriggerSelection = 0;
-    dmaInit.Request = usart->rxDMA_Channel;
-    dmaInit.TransferEventMode = LL_DMA_TCEM_BLK_TRANSFER;
-    dmaInit.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT0;
-    dmaInit.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
-    dmaInit.LinkAllocatedPort = LL_DMA_LINK_ALLOCATED_PORT1;
-    dmaInit.LinkStepMode = LL_DMA_LSM_FULL_EXECUTION;
-    dmaInit.LinkedListBaseAddr = 0;
-    dmaInit.LinkedListAddrOffset = 0;
-    LL_DMA_Init(usart->rxDMA, usart->rxDMA_Stream, &dmaInit);
+  dmaInit.SrcAddress =
+      LL_USART_DMA_GetRegAddr(usart->USARTx, LL_USART_DMA_REG_DATA_RECEIVE);
+  dmaInit.Request = usart->rxDMA_Channel;
+  dmaInit.Direction = LL_DMA_DIRECTION_PERIPH_TO_MEMORY;
+  dmaInit.Priority = LL_DMA_LOW_PRIORITY_HIGH_WEIGHT;
+  dmaInit.DestAddress = (intptr_t)buffer;
+  dmaInit.DestIncMode = LL_DMA_DEST_INCREMENT;
+  dmaInit.BlkDataLength = length;
+  dmaInit.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT1;
+  dmaInit.LinkAllocatedPort = LL_DMA_LINK_ALLOCATED_PORT1;
+  LL_DMA_Init(usart->rxDMA, usart->rxDMA_Stream, &dmaInit);
 
-    dmaInit.Mode = LL_DMA_NORMAL;
+  // configure destination address reset (circular buffer)
+  // at end of DMA buffer
+  uintptr_t* p_addr_reset = (uintptr_t*)&((uint8_t*)buffer)[length];
 
-    LL_DMA_EnableIT_HT(usart->rxDMA, usart->rxDMA_Stream);
-    LL_DMA_EnableIT_TC(usart->rxDMA, usart->rxDMA_Stream);
-    LL_DMA_EnableIT_USE(usart->rxDMA, usart->rxDMA_Stream);
-    LL_DMA_EnableIT_ULE(usart->rxDMA, usart->rxDMA_Stream);
-    LL_DMA_EnableIT_DTE(usart->rxDMA, usart->rxDMA_Stream);
+  LL_DMA_SetLinkedListBaseAddr(usart->rxDMA, usart->rxDMA_Stream,
+                               (uintptr_t)p_addr_reset & 0xFFFF0000);
 
-    LL_USART_EnableDMAReq_RX(usart->USARTx);
-    LL_DMA_EnableChannel(usart->rxDMA, usart->rxDMA_Stream);
+  LL_DMA_ConfigLinkUpdate(usart->rxDMA, usart->rxDMA_Stream, LL_DMA_UPDATE_CDAR,
+                          (uintptr_t)p_addr_reset & 0xFFFF);
 
+  // enable RX DMA
+  LL_USART_EnableDMAReq_RX(usart->USARTx);
+  LL_DMA_EnableChannel(usart->rxDMA, usart->rxDMA_Stream);
 
-#else // STM32H7RS
+#else // STM32H7RS || STM32H5
 
 #if defined(STM32H7)
   dmaInit.PeriphRequest = usart->rxDMA_Channel;
@@ -696,40 +648,16 @@ void stm32_usart_send_buffer(const stm32_usart_t* usart, const uint8_t * data, u
         LL_USART_DMA_GetRegAddr(usart->USARTx, LL_USART_DMA_REG_DATA_TRANSMIT);
     dmaInit.SrcAddress = (intptr_t)data;
     dmaInit.Direction = LL_DMA_DIRECTION_MEMORY_TO_PERIPH;
-    dmaInit.BlkHWRequest = LL_DMA_HWREQUEST_SINGLEBURST;
-    dmaInit.DataAlignment = LL_DMA_DATA_ALIGN_ZEROPADD;
-    dmaInit.SrcBurstLength = 1;
-    dmaInit.DestBurstLength = 1;
-    dmaInit.SrcDataWidth = LL_DMA_SRC_DATAWIDTH_BYTE;
-    dmaInit.DestDataWidth = LL_DMA_DEST_DATAWIDTH_BYTE;
     dmaInit.SrcIncMode = LL_DMA_SRC_INCREMENT;
-    dmaInit.DestIncMode = LL_DMA_DEST_FIXED;
     dmaInit.Priority = LL_DMA_LOW_PRIORITY_HIGH_WEIGHT;
     dmaInit.BlkDataLength = size;
-    dmaInit.TriggerMode = LL_DMA_TRIGM_BLK_TRANSFER;
-    dmaInit.TriggerPolarity = LL_DMA_TRIG_POLARITY_MASKED;
-    dmaInit.TriggerSelection = 0;
     dmaInit.Request = usart->txDMA_Channel;
-    dmaInit.TransferEventMode = LL_DMA_TCEM_BLK_TRANSFER;
-    dmaInit.SrcAllocatedPort = LL_DMA_SRC_ALLOCATED_PORT0;
-    dmaInit.DestAllocatedPort = LL_DMA_DEST_ALLOCATED_PORT0;
-    dmaInit.LinkAllocatedPort = LL_DMA_LINK_ALLOCATED_PORT1;
-    dmaInit.LinkStepMode = LL_DMA_LSM_FULL_EXECUTION;
-    dmaInit.LinkedListBaseAddr = 0;
-    dmaInit.LinkedListAddrOffset = 0;
-    dmaInit.Mode = LL_DMA_NORMAL;
-
     LL_DMA_Init(usart->txDMA, usart->txDMA_Stream, &dmaInit);
 
-    LL_DMA_EnableIT_TC(usart->txDMA, usart->txDMA_Stream);
-    LL_DMA_EnableIT_USE(usart->txDMA, usart->txDMA_Stream);
-    LL_DMA_EnableIT_ULE(usart->txDMA, usart->txDMA_Stream);
-    LL_DMA_EnableIT_DTE(usart->txDMA, usart->txDMA_Stream);
-
     LL_USART_EnableDMAReq_TX(usart->USARTx);
+
+    LL_DMA_EnableIT_TC(usart->txDMA, usart->txDMA_Stream);
     LL_DMA_EnableChannel(usart->txDMA, usart->txDMA_Stream);
-
-
 #else
 
 #if defined(STM32H7)

@@ -24,6 +24,7 @@
 #include "stm32_timer.h"
 #include "stm32_gpio.h"
 #include "hal/gpio.h"
+#include "stm32h5xx_ll_dma.h"
 
 #include <string.h>
 
@@ -453,7 +454,12 @@ static bool stm32_softserial_tx_dma_tc_isr(void* ctx)
 
   uint16_t length = _fill_pulses(st);
 #if defined(STM32H7RS) || defined(STM32H5)
-#warning DMA not implemented for softserial
+#if defined(STM32_SUPPORT_32BIT_TIMERS)
+  if (st->pulse_inc == 2) length *= 2;
+#endif
+  LL_DMA_SetSrcAddress(tim->DMAx, tim->DMA_Stream, (uintptr_t)st->pulse_buffer);
+  LL_DMA_SetBlkDataLength(tim->DMAx, tim->DMA_Stream, length * 2);
+  LL_DMA_EnableChannel(tim->DMAx, tim->DMA_Stream);
 #else
   LL_DMA_SetDataLength(tim->DMAx, tim->DMA_Stream, length);
   LL_DMA_EnableStream(tim->DMAx, tim->DMA_Stream);
